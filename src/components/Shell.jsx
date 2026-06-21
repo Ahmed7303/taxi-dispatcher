@@ -4,6 +4,7 @@ import React from 'react';
 import { useStore } from '../store/useStore';
 import { logout } from '../api/client';
 import OrdersScreen from '../screens/OrdersScreen';
+import DriversScreen from '../screens/DriversScreen';
 
 const NAV = [
   { id: 'orders', label: 'Заказы' },
@@ -65,7 +66,9 @@ export default function Shell() {
 
       <main style={{ flex: 1, overflow: 'hidden', display: 'flex', flexDirection: 'column' }}>
         {screen === 'orders' && <OrdersScreen />}
-        {screen !== 'orders' && <Placeholder name={NAV.find((n) => n.id === screen)?.label} />}
+        {screen === 'drivers' && <DriversScreen />}
+        {screen !== 'orders' && screen !== 'drivers' &&
+          <Placeholder name={NAV.find((n) => n.id === screen)?.label} />}
       </main>
     </div>
   );
