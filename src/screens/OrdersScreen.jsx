@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useCallback } from 'react';
 import { api } from '../api/client';
+import { getSocket } from '../api/socket';
 import { useStore } from '../store/useStore';
 
 // Человекочитаемые подписи причин событий overview:update
@@ -50,6 +51,20 @@ export default function OrdersScreen() {
   }, []);
 
   useEffect(() => { loadSnapshot(); }, [loadSnapshot]);
+
+  // живое обновление снимка: на любое событие пульта перезагружаем список заказов
+  // (со схлопыванием частых событий, чтобы не дёргать сервер на каждое)
+  useEffect(() => {
+    const s = getSocket();
+    if (!s) return;
+    let timer = null;
+    const onOverview = () => {
+      if (timer) return;
+      timer = setTimeout(() => { timer = null; loadSnapshot(); }, 400);
+    };
+    s.on('overview:update', onOverview);
+    return () => { s.off('overview:update', onOverview); if (timer) clearTimeout(timer); };
+  }, [loadSnapshot]);
 
   return (
     <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
@@ -104,7 +119,12 @@ function OrderRow({ o }) {
   return (
     <div style={card}>
       <div className="row">
-        <div className="mono" style={{ fontWeight: 600 }}>#{o.id ?? '?'}</div>
+        {o.client_phone
+          ? <>
+              <div className="mono" style={{ fontWeight: 600 }}>{o.client_phone}</div>
+              <span className="dim mono" style={{ fontSize: 12 }}>#{o.id}</span>
+            </>
+          : <div className="mono" style={{ fontWeight: 600 }}>#{o.id ?? '?'}</div>}
         <div className="spacer" />
         <span style={{ ...badge, color: reasonColor(status), borderColor: reasonColor(status) }}>
           {REASON_RU[status] || status}
@@ -117,8 +137,10 @@ function OrderRow({ o }) {
       )}
       <div className="row dim" style={{ fontSize: 12, marginTop: 6, gap: 14 }}>
         {o.price_offered != null && <span>{o.price_offered} ман.</span>}
-        {o.driver_id != null && <span className="mono">водитель #{o.driver_id}</span>}
-        {o.client_id != null && <span className="mono">клиент #{o.client_id}</span>}
+        {o.driver_phone
+          ? <span className="mono">водитель {o.driver_phone}</span>
+          : (o.driver_id != null && <span className="mono">водитель #{o.driver_id}</span>)}
+        {!o.client_phone && o.client_id != null && <span className="mono">клиент #{o.client_id}</span>}
       </div>
     </div>
   );
