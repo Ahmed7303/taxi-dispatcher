@@ -52,12 +52,10 @@ export default function DriversScreen() {
   }
 
   const filtered = state.drivers.filter((d) => {
-    if (!query.trim()) return true;
-    const q = query.toLowerCase();
-    return String(d.id).includes(q)
-      || (d.name || '').toLowerCase().includes(q)
-      || (d.phone || '').toLowerCase().includes(q)
-      || (d.car_plate || '').toLowerCase().includes(q);
+    const q = query.replace(/\D/g, '');
+    if (!q) return true;
+    const phone = (d.phone || '').replace(/\D/g, '');
+    return phone.includes(q);
   });
 
   return (
@@ -65,7 +63,7 @@ export default function DriversScreen() {
       <header style={head}>
         <div style={{ fontSize: 18, fontWeight: 700 }}>Водители</div>
         <div style={{ width: 260 }}>
-          <input placeholder="Поиск: имя, телефон, номер, id"
+          <input placeholder="Поиск по номеру телефона"
             value={query} onChange={(e) => setQuery(e.target.value)} />
         </div>
         <div className="spacer" />
